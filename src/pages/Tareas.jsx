@@ -15,7 +15,7 @@ function Tareas() {
   const hoy = new Date().getDay();
 
   // ============ ESTADO ============
-  const [pestanaActiva, setPestanaActiva] = useState("haizea"); // haizea, iosu, hogar
+  const [pestanaActiva, setPestanaActiva] = useState("haizea");
 
   // Rutina Haizea
   const [rutinaHaizea, setRutinaHaizea] = useState([]);
@@ -23,7 +23,7 @@ function Tareas() {
   const [nuevaRutinaHaizea, setNuevaRutinaHaizea] = useState({
     hora: "",
     descripcion: "",
-    dia_semana: hoy,
+    dias_semana: [],
   });
 
   // Rutina Iosu
@@ -32,7 +32,7 @@ function Tareas() {
   const [nuevaRutinaIosu, setNuevaRutinaIosu] = useState({
     hora: "",
     descripcion: "",
-    dia_semana: hoy,
+    dias_semana: [],
   });
 
   // Tareas Hogar
@@ -40,29 +40,20 @@ function Tareas() {
   const [mostrarFormHogar, setMostrarFormHogar] = useState(false);
   const [nuevaTareaHogar, setNuevaTareaHogar] = useState({ nombre: "" });
 
-  // ============ CARGAR DATOS AL MONTAR ============
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
+  // ============ FUNCIONES ASYNC ============
   async function cargarDatos() {
-    // Cargar Rutina Haizea
     const { data: dataHaizea } = await supabase
       .from("rutina_mi")
       .select("*")
-      .order("dia_semana", { ascending: true })
       .order("hora", { ascending: true });
     if (dataHaizea) setRutinaHaizea(dataHaizea);
 
-    // Cargar Rutina Iosu
     const { data: dataIosu } = await supabase
       .from("rutina_iosu")
       .select("*")
-      .order("dia_semana", { ascending: true })
       .order("hora", { ascending: true });
     if (dataIosu) setRutinaIosu(dataIosu);
 
-    // Cargar Tareas Hogar
     const { data: dataHogar } = await supabase
       .from("tareas_hogar")
       .select("*")
@@ -71,20 +62,32 @@ function Tareas() {
     if (dataHogar) setTareasHogar(dataHogar);
   }
 
+  // ============ useEffect ============
+  useEffect(() => {
+    const loadData = async () => {
+      await cargarDatos();
+    };
+    loadData();
+  }, []);
+
   // ============ FUNCIONES RUTINA HAIZEA ============
   async function guardarRutinaHaizea() {
-    if (!nuevaRutinaHaizea.hora.trim() || !nuevaRutinaHaizea.descripcion.trim())
+    if (
+      !nuevaRutinaHaizea.hora.trim() ||
+      !nuevaRutinaHaizea.descripcion.trim() ||
+      nuevaRutinaHaizea.dias_semana.length === 0
+    )
       return;
 
     const { error } = await supabase.from("rutina_mi").insert({
       hora: nuevaRutinaHaizea.hora,
       descripcion: nuevaRutinaHaizea.descripcion,
-      dia_semana: nuevaRutinaHaizea.dia_semana,
+      dias_semana: nuevaRutinaHaizea.dias_semana,
     });
 
     if (!error) {
       await cargarDatos();
-      setNuevaRutinaHaizea({ hora: "", descripcion: "", dia_semana: hoy });
+      setNuevaRutinaHaizea({ hora: "", descripcion: "", dias_semana: [] });
       setMostrarFormHaizea(false);
     }
   }
@@ -94,20 +97,39 @@ function Tareas() {
     await cargarDatos();
   }
 
+  function toggleDiaHaizea(dia) {
+    const dias = nuevaRutinaHaizea.dias_semana;
+    if (dias.includes(dia)) {
+      setNuevaRutinaHaizea({
+        ...nuevaRutinaHaizea,
+        dias_semana: dias.filter((d) => d !== dia),
+      });
+    } else {
+      setNuevaRutinaHaizea({
+        ...nuevaRutinaHaizea,
+        dias_semana: [...dias, dia],
+      });
+    }
+  }
+
   // ============ FUNCIONES RUTINA IOSU ============
   async function guardarRutinaIosu() {
-    if (!nuevaRutinaIosu.hora.trim() || !nuevaRutinaIosu.descripcion.trim())
+    if (
+      !nuevaRutinaIosu.hora.trim() ||
+      !nuevaRutinaIosu.descripcion.trim() ||
+      nuevaRutinaIosu.dias_semana.length === 0
+    )
       return;
 
     const { error } = await supabase.from("rutina_iosu").insert({
       hora: nuevaRutinaIosu.hora,
       descripcion: nuevaRutinaIosu.descripcion,
-      dia_semana: nuevaRutinaIosu.dia_semana,
+      dias_semana: nuevaRutinaIosu.dias_semana,
     });
 
     if (!error) {
       await cargarDatos();
-      setNuevaRutinaIosu({ hora: "", descripcion: "", dia_semana: hoy });
+      setNuevaRutinaIosu({ hora: "", descripcion: "", dias_semana: [] });
       setMostrarFormIosu(false);
     }
   }
@@ -115,6 +137,21 @@ function Tareas() {
   async function eliminarRutinaIosu(id) {
     await supabase.from("rutina_iosu").delete().eq("id", id);
     await cargarDatos();
+  }
+
+  function toggleDiaIosu(dia) {
+    const dias = nuevaRutinaIosu.dias_semana;
+    if (dias.includes(dia)) {
+      setNuevaRutinaIosu({
+        ...nuevaRutinaIosu,
+        dias_semana: dias.filter((d) => d !== dia),
+      });
+    } else {
+      setNuevaRutinaIosu({
+        ...nuevaRutinaIosu,
+        dias_semana: [...dias, dia],
+      });
+    }
   }
 
   // ============ FUNCIONES TAREAS HOGAR ============
@@ -147,12 +184,12 @@ function Tareas() {
   }
 
   // ============ HELPERS ============
-  function filtrarPorDia(lista, dia) {
-    return lista.filter((item) => item.dia_semana === dia);
+  function rutinasDelDia(lista, dia) {
+    return lista.filter((item) => item.dias_semana.includes(dia));
   }
 
   function renderizarRutina(lista, dia, esIosu = false) {
-    const delDia = filtrarPorDia(lista, dia);
+    const delDia = rutinasDelDia(lista, dia);
 
     if (delDia.length === 0) {
       return <p className="text-sm text-teal-400 ml-4">Nada programado</p>;
@@ -257,26 +294,30 @@ function Tareas() {
                 }
                 className="w-full border border-teal-200 rounded-xl px-3 py-2 mb-3 text-teal-700 outline-none focus:ring-2 focus:ring-teal-300"
               />
-              <select
-                value={nuevaRutinaHaizea.dia_semana}
-                onChange={(e) =>
-                  setNuevaRutinaHaizea({
-                    ...nuevaRutinaHaizea,
-                    dia_semana: Number(e.target.value),
-                  })
-                }
-                className="w-full border border-teal-200 rounded-xl px-3 py-2 mb-3 text-teal-700 outline-none focus:ring-2 focus:ring-teal-300"
-              >
+
+              {/* Checkboxes para días */}
+              <p className="text-sm font-semibold text-teal-600 mb-2">
+                ¿Qué días?
+              </p>
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 {DIAS.map((dia, index) => (
-                  <option key={dia} value={index}>
-                    {dia}
-                  </option>
+                  <label key={dia} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={nuevaRutinaHaizea.dias_semana.includes(index)}
+                      onChange={() => toggleDiaHaizea(index)}
+                      className="accent-teal-500"
+                    />
+                    <span className="text-sm text-teal-700">{dia}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
+
               <div className="flex gap-2">
                 <button
                   onClick={guardarRutinaHaizea}
-                  className="flex-1 bg-teal-500 text-white rounded-xl py-2 font-semibold"
+                  className="flex-1 bg-teal-500 text-white rounded-xl py-2 font-semibold disabled:opacity-50"
+                  disabled={nuevaRutinaHaizea.dias_semana.length === 0}
                 >
                   Guardar
                 </button>
@@ -336,26 +377,30 @@ function Tareas() {
                 }
                 className="w-full border border-teal-200 rounded-xl px-3 py-2 mb-3 text-teal-700 outline-none focus:ring-2 focus:ring-teal-300"
               />
-              <select
-                value={nuevaRutinaIosu.dia_semana}
-                onChange={(e) =>
-                  setNuevaRutinaIosu({
-                    ...nuevaRutinaIosu,
-                    dia_semana: Number(e.target.value),
-                  })
-                }
-                className="w-full border border-teal-200 rounded-xl px-3 py-2 mb-3 text-teal-700 outline-none focus:ring-2 focus:ring-teal-300"
-              >
+
+              {/* Checkboxes para días */}
+              <p className="text-sm font-semibold text-teal-600 mb-2">
+                ¿Qué días?
+              </p>
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 {DIAS.map((dia, index) => (
-                  <option key={dia} value={index}>
-                    {dia}
-                  </option>
+                  <label key={dia} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={nuevaRutinaIosu.dias_semana.includes(index)}
+                      onChange={() => toggleDiaIosu(index)}
+                      className="accent-teal-500"
+                    />
+                    <span className="text-sm text-teal-700">{dia}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
+
               <div className="flex gap-2">
                 <button
                   onClick={guardarRutinaIosu}
-                  className="flex-1 bg-teal-500 text-white rounded-xl py-2 font-semibold"
+                  className="flex-1 bg-teal-500 text-white rounded-xl py-2 font-semibold disabled:opacity-50"
+                  disabled={nuevaRutinaIosu.dias_semana.length === 0}
                 >
                   Guardar
                 </button>
