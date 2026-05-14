@@ -12,10 +12,9 @@ const DIAS = [
 ];
 
 function Tareas() {
-  const hoy = new Date().getDay();
-
   // ============ ESTADO ============
   const [pestanaActiva, setPestanaActiva] = useState("haizea");
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date()); // ✨ NUEVA
 
   // Rutina Haizea
   const [rutinaHaizea, setRutinaHaizea] = useState([]);
@@ -39,6 +38,33 @@ function Tareas() {
   const [tareasHogar, setTareasHogar] = useState([]);
   const [mostrarFormHogar, setMostrarFormHogar] = useState(false);
   const [nuevaTareaHogar, setNuevaTareaHogar] = useState({ nombre: "" });
+
+  // ============ FUNCIONES HELPER PARA FECHAS ============
+  function obtenerDia(fecha) {
+    return fecha.getDay();
+  }
+
+  function obtenerFechaFormato(fecha) {
+    const dia = fecha.getDate();
+    const meses = [
+      "enero", "febrero", "marzo", "abril", "mayo", "junio",
+      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+    ];
+    const mes = meses[fecha.getMonth()];
+    return `${dia} de ${mes}`;
+  }
+
+  function irAlDiaAnterior() {
+    const nuevaFecha = new Date(fechaSeleccionada);
+    nuevaFecha.setDate(nuevaFecha.getDate() - 1);
+    setFechaSeleccionada(nuevaFecha);
+  }
+
+  function irAlDiaSiguiente() {
+    const nuevaFecha = new Date(fechaSeleccionada);
+    nuevaFecha.setDate(nuevaFecha.getDate() + 1);
+    setFechaSeleccionada(nuevaFecha);
+  }
 
   // ============ FUNCIONES ASYNC ============
   async function cargarDatos() {
@@ -216,13 +242,14 @@ function Tareas() {
     ));
   }
 
+  const diaActual = obtenerDia(fechaSeleccionada);
+
   // ============ RENDER ============
   return (
     <div className="min-h-screen bg-teal-50 px-4 pt-8 pb-24">
       {/* Cabecera */}
       <div className="mb-6 text-center">
         <h1 className="text-2xl font-bold text-teal-700">Tareas & Rutinas</h1>
-        <p className="text-sm text-teal-500 mt-1">{DIAS[hoy]}</p>
       </div>
 
       {/* Pestañas */}
@@ -259,14 +286,37 @@ function Tareas() {
         </button>
       </div>
 
+      {/* ============ NAVEGACIÓN DE DÍAS (para rutinas) ============ */}
+      {(pestanaActiva === "haizea" || pestanaActiva === "iosu") && (
+        <div className="flex justify-between items-center mb-6 bg-white rounded-xl p-3 shadow-sm">
+          <button
+            onClick={irAlDiaAnterior}
+            className="text-teal-500 font-bold text-xl"
+          >
+            ◀
+          </button>
+          <div className="text-center">
+            <p className="font-semibold text-teal-700">
+              {DIAS[diaActual]}
+            </p>
+            <p className="text-xs text-teal-500">
+              {obtenerFechaFormato(fechaSeleccionada)}
+            </p>
+          </div>
+          <button
+            onClick={irAlDiaSiguiente}
+            className="text-teal-500 font-bold text-xl"
+          >
+            ▶
+          </button>
+        </div>
+      )}
+
       {/* ============ PESTAÑA 1: MI RUTINA ============ */}
       {pestanaActiva === "haizea" && (
         <div>
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-teal-600 mb-3">
-              Hoy — {DIAS[hoy]}
-            </h2>
-            {renderizarRutina(rutinaHaizea, hoy, false)}
+            {renderizarRutina(rutinaHaizea, diaActual, false)}
           </div>
 
           {mostrarFormHaizea && (
@@ -346,10 +396,7 @@ function Tareas() {
       {pestanaActiva === "iosu" && (
         <div>
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-teal-600 mb-3">
-              Hoy — {DIAS[hoy]}
-            </h2>
-            {renderizarRutina(rutinaIosu, hoy, true)}
+            {renderizarRutina(rutinaIosu, diaActual, true)}
           </div>
 
           {mostrarFormIosu && (
