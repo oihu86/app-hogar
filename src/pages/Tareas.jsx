@@ -47,8 +47,18 @@ function Tareas() {
   function obtenerFechaFormato(fecha) {
     const dia = fecha.getDate();
     const meses = [
-      "enero", "febrero", "marzo", "abril", "mayo", "junio",
-      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre",
     ];
     const mes = meses[fecha.getMonth()];
     return `${dia} de ${mes}`;
@@ -262,7 +272,7 @@ function Tareas() {
               : "text-teal-600"
           }`}
         >
-          Mi rutina
+          Rutina Haizea
         </button>
         <button
           onClick={() => setPestanaActiva("iosu")}
@@ -296,9 +306,7 @@ function Tareas() {
             ◀
           </button>
           <div className="text-center">
-            <p className="font-semibold text-teal-700">
-              {DIAS[diaActual]}
-            </p>
+            <p className="font-semibold text-teal-700">{DIAS[diaActual]}</p>
             <p className="text-xs text-teal-500">
               {obtenerFechaFormato(fechaSeleccionada)}
             </p>
@@ -386,7 +394,7 @@ function Tareas() {
               onClick={() => setMostrarFormHaizea(true)}
               className="w-full bg-teal-500 text-white rounded-xl py-3 font-semibold"
             >
-              + Añadir a mi rutina
+              + Añadir a rutina Haizea
             </button>
           )}
         </div>
